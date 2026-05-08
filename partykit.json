@@ -1,0 +1,6 @@
+{
+  "name": "kutta-card-game",
+  "main": "server.ts",
+  "serve": "index.html",
+}
+

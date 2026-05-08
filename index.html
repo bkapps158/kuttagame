@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kutta Online</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/partysocket@1.1.6/dist/partysocket.min.js"></script>
+
+<style>
+:root{
+  --bg:#0f1117;
+  --panel:#1b1f2a;
+  --panel2:#252b3a;
+  --accent:#7c5cff;
+  --text:#ffffff;
+  --muted:#9aa3b2;
+  --green:#22c55e;
+  --red:#ef4444;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ====================================== */
+/* LOBBY */
+/* ====================================== */
+
+#lobby{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.lobby-card{
+  width:100%;
+  max-width:400px;
+  background:var(--panel);
+  border-radius:22px;
+  padding:28px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  box-shadow:0 10px 40px rgba(0,0,0,.4);
+}
+
+.logo{
+  font-size:3rem;
+  font-weight:700;
+  text-align:center;
+}
+
+.subtitle{
+  text-align:center;
+  color:var(--muted);
+  margin-top:-10px;
+}
+
+input{
+  width:100%;
+  background:var(--panel2);
+  border:none;
+  outline:none;
+  color:white;
+  padding:15px;
+  border-radius:12px;
+  font-size:16px;
+}
+
+button{
+  border:none;
+  cursor:pointer;
+  border-radius:12px;
+  padding:15px;
+  font-size:15px;
+  font-weight:600;
+}
+
+.primary{
+  background:var(--accent);
+  color:white;
+}
+
+.secondary{
+  background:var(--panel2);
+  color:white;
+}
+
+#error{
+  min-height:20px;
+  color:#ff9d9d;
+  font-size:14px;
+}
+
+/* ====================================== */
+/* WAITING */
+/* ====================================== */
+
+#waiting-screen{
+  display:none;
+  min-height:100vh;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:22px;
+}
+
+.spinner{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  border:5px solid #333;
+  border-top:5px solid var(--accent);
+  animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+.room-box{
+  background:var(--panel);
+  padding:18px 28px;
+  border-radius:16px;
+  font-size:2rem;
+  font-weight:700;
+}
+
+/* ====================================== */
+/* GAME */
+/* ====================================== */
+
+#game-screen{
+  display:none;
+  min-height:100vh;
+  flex-direction:column;
+}
+
+.topbar{
+  background:var(--panel);
+  padding:12px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.connection{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#666;
+}
+
+.dot.online{
+  background:var(--green);
+}
+
+.dot.offline{
+  background:var(--red);
+}
+
+.board{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:20px;
+}
+
+.player-area{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+
+.player-name{
+  font-size:18px;
+  font-weight:600;
+}
+
+.player-score{
+  color:var(--muted);
+}
+
+.hand{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+.card{
+  width:72px;
+  height:100px;
+  border-radius:14px;
+  background:white;
+  color:black;
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  font-weight:700;
+  cursor:pointer;
+  transition:.15s;
+  user-select:none;
+}
+
+.card:hover{
+  transform:translateY(-10px);
+}
+
+.card.red{
+  color:#dc2626;
+}
+
+.card.back{
+  background:
+    linear-gradient(
+      135deg,
+      #4f46e5,
+      #312e81
+    );
+}
+
+.middle{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:20px;
+}
+
+.play-area{
+  display:flex;
+  gap:20px;
+  align-items:center;
+}
+
+.status{
+  color:var(--muted);
+  text-align:center;
+}
+
+.turn{
+  color:var(--green);
+  font-weight:700;
+}
+
+/* ====================================== */
+/* WIN */
+/* ====================================== */
+
+#win-screen{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.9);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:20px;
+  z-index:100;
+}
+
+#win-title{
+  font-size:3rem;
+  font-weight:700;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ====================================== -->
+<!-- LOBBY -->
+<!-- ====================================== -->
+
+<div id="lobby">
+
+  <div class="lobby-card">
+
+    <div class="logo">
+      KUTTA
+    </div>
+
+    <div class="subtitle">
+      Online Multiplayer Card Duel
+    </div>
+
+    <input
+      id="name-input"
+      maxlength="16"
+      placeholder="Your Name"
+      value="Player"
+    >
+
+    <input
+      id="room-input"
+      maxlength="12"
+      placeholder="Room Code"
+    >
+
+    <button
+      class="secondary"
+      onclick="randomRoom()"
+    >
+      Random Room
+    </button>
+
+    <div id="error"></div>
+
+    <button
+      class="primary"
+      onclick="joinRoom()"
+    >
+      Join Game
+    </button>
+
+  </div>
+
+</div>
+
+<!-- ====================================== -->
+<!-- WAITING -->
+<!-- ====================================== -->
+
+<div id="waiting-screen">
+
+  <div class="spinner"></div>
+
+  <div>
+    Waiting for opponent...
+  </div>
+
+  <div class="room-box" id="waiting-code">
+    ROOM
+  </div>
+
+</div>
+
+<!-- ====================================== -->
+<!-- GAME -->
+<!-- ====================================== -->
+
+<div id="game-screen">
+
+  <div class="topbar">
+
+    <div>
+      Room:
+      <b id="hdr-room">
+        ROOM
+      </b>
+    </div>
+
+    <div class="connection">
+      <div class="dot" id="conn-dot"></div>
+      <span>Realtime</span>
+    </div>
+
+  </div>
+
+  <div class="board">
+
+    <!-- OPPONENT -->
+
+    <div class="player-area">
+
+      <div class="player-name" id="opp-name">
+        Opponent
+      </div>
+
+      <div class="player-score">
+        Tricks:
+        <span id="opp-score">0</span>
+      </div>
+
+      <div class="hand" id="opp-hand"></div>
+
+    </div>
+
+    <!-- CENTER -->
+
+    <div class="middle">
+
+      <div class="play-area">
+
+        <div id="lead-slot"></div>
+
+        <div id="response-slot"></div>
+
+      </div>
+
+      <div
+        class="status"
+        id="status"
+      >
+        Waiting...
+      </div>
+
+    </div>
+
+    <!-- PLAYER -->
+
+    <div class="player-area">
+
+      <div class="player-name" id="me-name">
+        You
+      </div>
+
+      <div class="player-score">
+        Tricks:
+        <span id="me-score">0</span>
+      </div>
+
+      <div class="hand" id="my-hand"></div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ====================================== -->
+<!-- WIN -->
+<!-- ====================================== -->
+
+<div id="win-screen">
+
+  <div id="win-title">
+    Winner
+  </div>
+
+  <button
+    class="primary"
+    onclick="rematch()"
+  >
+    Rematch
+  </button>
+
+</div>
+
+<script>
+let socket = null;
+
+let myName = "";
+let roomCode = "";
+
+let gameState = null;
+
+let myPlayerIndex = -1;
+
+// ======================================
+// HELPERS
+// ======================================
+
+function $(id){
+  return document.getElementById(id);
+}
+
+function showError(msg){
+  $("error").textContent = msg;
+}
+
+function clearError(){
+  $("error").textContent = "";
+}
+
+function randomRoom(){
+  const code =
+    Math.random()
+      .toString(36)
+      .substring(2,8)
+      .toUpperCase();
+
+  $("room-input").value = code;
+}
+
+function hideAll(){
+  $("lobby").style.display = "none";
+  $("waiting-screen").style.display = "none";
+  $("game-screen").style.display = "none";
+}
+
+// ======================================
+// JOIN ROOM
+// ======================================
+
+function joinRoom(){
+
+  myName =
+    $("name-input")
+      .value
+      .trim();
+
+  roomCode =
+    $("room-input")
+      .value
+      .trim()
+      .toUpperCase();
+
+  if(!myName){
+    showError("Enter name");
+    return;
+  }
+
+  if(!roomCode){
+    showError("Enter room code");
+    return;
+  }
+
+  clearError();
+
+  connect();
+}
+
+// ======================================
+// CONNECT
+// ======================================
+
+function connect(){
+
+  if(socket){
+    socket.close();
+  }
+
+  socket = new PartySocket({
+
+    host:
+      "kutta-card-game.YOURNAME.partykit.dev",
+
+    room:
+      roomCode.toLowerCase(),
+
+    party:
+      "default"
+  });
+
+  hideAll();
+
+  $("waiting-screen").style.display =
+    "flex";
+
+  $("waiting-code").textContent =
+    roomCode;
+
+  $("hdr-room").textContent =
+    roomCode;
+
+  socket.addEventListener(
+    "open",
+    () => {
+
+      $("conn-dot").className =
+        "dot online";
+
+      socket.send(
+        JSON.stringify({
+          type:"join",
+          name:myName
+        })
+      );
+    }
+  );
+
+  socket.addEventListener(
+    "close",
+    () => {
+
+      $("conn-dot").className =
+        "dot offline";
+    }
+  );
+
+  socket.addEventListener(
+    "message",
+    evt => {
+
+      const msg =
+        JSON.parse(evt.data);
+
+      if(msg.type === "state"){
+        handleState(msg.game);
+      }
+
+      if(msg.type === "error"){
+        showError(msg.message);
+      }
+    }
+  );
+}
+
+// ======================================
+// GAME STATE
+// ======================================
+
+function handleState(game){
+
+  gameState = game;
+
+  if(game.players.length === 2){
+
+    hideAll();
+
+    $("game-screen").style.display =
+      "flex";
+  }
+
+  const me =
+    game.players.find(
+      p =>
+        p.name === myName
+    );
+
+  const opp =
+    game.players.find(
+      p =>
+        p.name !== myName
+    );
+
+  if(me){
+    myPlayerIndex =
+      game.players.indexOf(me);
+  }
+
+  // Names
+
+  $("me-name").textContent =
+    me?.name || "You";
+
+  $("opp-name").textContent =
+    opp?.name || "Opponent";
+
+  // Scores
+
+  $("me-score").textContent =
+    me?.tricks || 0;
+
+  $("opp-score").textContent =
+    opp?.tricks || 0;
+
+  // Status
+
+  const myTurn =
+    game.currentPlayer ===
+    myPlayerIndex;
+
+  $("status").innerHTML =
+    myTurn
+      ? `<span class="turn">Your Turn</span>`
+      : game.lastLog;
+
+  // Opponent hand
+
+  $("opp-hand").innerHTML = "";
+
+  if(opp){
+
+    opp.hand.forEach(() => {
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "card back";
+
+      $("opp-hand")
+        .appendChild(card);
+    });
+  }
+
+  // My hand
+
+  $("my-hand").innerHTML = "";
+
+  if(me){
+
+    me.hand.forEach(card => {
+
+      const el =
+        createCard(card);
+
+      if(myTurn){
+
+        el.onclick = () => {
+          playCard(card);
+        };
+      }
+
+      $("my-hand")
+        .appendChild(el);
+    });
+  }
+
+  // Played cards
+
+  $("lead-slot").innerHTML = "";
+
+  $("response-slot").innerHTML = "";
+
+  if(game.leadCard){
+
+    $("lead-slot")
+      .appendChild(
+        createCard(
+          game.leadCard
+        )
+      );
+  }
+
+  if(game.respondCard){
+
+    $("response-slot")
+      .appendChild(
+        createCard(
+          game.respondCard
+        )
+      );
+  }
+
+  // Winner
+
+  if(game.phase === "finished"){
+
+    $("win-screen").style.display =
+      "flex";
+
+    $("win-title").textContent =
+      game.winner === myName
+        ? "YOU WIN"
+        : game.winner === "Draw"
+          ? "DRAW"
+          : `${game.winner} WINS`;
+  }
+}
+
+// ======================================
+// CARD
+// ======================================
+
+function createCard(card){
+
+  const el =
+    document.createElement("div");
+
+  const red =
+    card.suit === "♥" ||
+    card.suit === "♦";
+
+  el.className =
+    red
+      ? "card red"
+      : "card";
+
+  el.innerHTML = `
+    <div>${card.rank}</div>
+    <div style="font-size:28px;text-align:center;">
+      ${card.suit}
+    </div>
+    <div style="text-align:right;">
+      ${card.rank}
+    </div>
+  `;
+
+  return el;
+}
+
+// ======================================
+// PLAY
+// ======================================
+
+function playCard(card){
+
+  socket.send(
+    JSON.stringify({
+      type:"play_card",
+      card
+    })
+  );
+}
+
+// ======================================
+// REMATCH
+// ======================================
+
+function rematch(){
+
+  $("win-screen").style.display =
+    "none";
+
+  socket.send(
+    JSON.stringify({
+      type:"rematch"
+    })
+  );
+}
+</script>
+
+</body>
+</html>
